@@ -133,6 +133,7 @@ def train(args,
           model,
           optimizer,
           pretrain_dataset_provider,
+          optimizer_parameter_names,
           finetune=False):
     global global_step
     global global_data_samples
@@ -187,7 +188,8 @@ def train(args,
 
                 model.network.step()
 
-                report_lamb_coefficients(args, optimizer)
+                report_lamb_coefficients(args, optimizer,
+                                         optimizer_parameter_names)
                 global_step += 1
                 epoch_step += 1
             else:
@@ -279,11 +281,17 @@ def report_step_metrics(args, lr, loss, step, data_sample_count):
               format(step + 1, loss, lr, data_sample_count))
 
 
-def report_lamb_coefficients(args, optimizer):
+def report_lamb_coefficients(args, optimizer, optimizer_parameter_names):
     if master_process(args):
         if (args.fp16 and args.use_lamb):
             #print("Lamb Coeffs", optimizer.optimizer.get_lamb_coeffs())
             lamb_coeffs = optimizer.optimizer.get_lamb_coeffs()
+            if len(lamb_coeffs) > 0:
+                for i in range(len(lamb_coeffs)):
+                    args.summary_writer.add_scalar(
+                        'Lamb/coeff_{}_{}'.format(
+                            i, optimizer_parameter_names[i]), lamb_coeffs[i],
+                        global_step)
             lamb_coeffs = np.array(lamb_coeffs)
             if lamb_coeffs.size > 0:
                 args.summary_writer.add_histogram(f'Train/lamb_coeffs',
@@ -385,7 +393,14 @@ def prepare_optimizer_parameters(args, model):
         0.0
     }]
 
-    return optimizer_grouped_parameters
+    optimizer_parameter_names_1 = [
+        n for n, p in param_optimizer if not any(nd in n for nd in no_decay)
+    ]
+    optimizer_parameter_names_2 = [
+        n for n, p in param_optimizer if any(nd in n for nd in no_decay)
+    ]
+    optimizer_parameter_names = optimizer_parameter_names_1 + optimizer_parameter_names_2
+    return optimizer_grouped_parameters, optimizer_parameter_names
 
 
 def prepare_model_optimizer(args):
@@ -396,7 +411,8 @@ def prepare_model_optimizer(args):
     model = BertMultiTask(args)
 
     # Optimizer parameters
-    optimizer_grouped_parameters = prepare_optimizer_parameters(args, model)
+    optimizer_grouped_parameters, optimizer_parameter_names = prepare_optimizer_parameters(
+        args, model)
 
     # DeepSpeed initializer handles FP16, distributed, optimizer automatically.
     model.network, optimizer, _, _ = deepspeed.initialize(
@@ -425,7 +441,7 @@ def prepare_model_optimizer(args):
         args.summary_writer = summary_writer
         os.makedirs(args.saved_model_path, exist_ok=True)
 
-    return model, optimizer
+    return model, optimizer, optimizer_parameter_names
 
 
 def load_checkpoint(args, model):
@@ -472,7 +488,7 @@ def load_checkpoint(args, model):
     return start_epoch
 
 
-def run(args, model, optimizer, start_epoch):
+def run(args, model, optimizer, start_epoch, optimizer_parameter_names):
     global global_step
     global global_data_samples
     global last_global_step_from_restore
@@ -488,7 +504,8 @@ def run(args, model, optimizer, start_epoch):
     for index in range(start_epoch, config["training"]["num_epochs"]):
         logger.info(f"Training Epoch: {index + 1}")
         pre = time.time()
-        train(args, index, model, optimizer, pretrain_dataset_provider)
+        train(args, index, model, optimizer, pretrain_dataset_provider,
+              optimizer_parameter_names)
 
         # Save ckpts according to "--ckpt_to_save" option,
         # e.g. "--ckpt_to_save 160 161" to save epoch 160 and 161.
@@ -518,11 +535,11 @@ def run(args, model, optimizer, start_epoch):
 def main():
     start = time.time()
     args = construct_arguments()
-    model, optimizer = prepare_model_optimizer(args)
+    model, optimizer, optimizer_parameter_names = prepare_model_optimizer(args)
     start_epoch = 0
     if not None in [args.load_training_checkpoint, args.load_checkpoint_id]:
         start_epoch = load_checkpoint(args, model)
-    run(args, model, optimizer, start_epoch)
+    run(args, model, optimizer, start_epoch, optimizer_parameter_names)
     elapsed = time.time() - start
     logger = args.logger
     logger.info(f"Elapsed time: {elapsed} seconds")

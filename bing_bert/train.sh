@@ -1,0 +1,2 @@
+bash train_128_baseline.sh lamb_64k_seq128_baseline_lambcoeff_newds
+bash train_512_baseline.sh lamb_32k_chkpt150_seq512_baseline_lambcoeff_newds lamb_64k_seq128_baseline_lambcoeff_newds 150
