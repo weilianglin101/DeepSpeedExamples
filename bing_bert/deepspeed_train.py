@@ -382,15 +382,32 @@ def prepare_optimizer_parameters(args, model):
         weight_decay = 0.01
 
     optimizer_grouped_parameters = [{
-        'params':
-        [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
+        'params': [
+            p for n, p in param_optimizer if (not any(
+                nd in n
+                for nd in no_decay) and n != 'cls.seq_relationship.bias')
+        ],
         'weight_decay':
-        weight_decay
+        weight_decay,
+        'no_freeze':
+        False
+    }, {
+        'params': [
+            p for n, p in param_optimizer
+            if (any(nd in n
+                    for nd in no_decay) and n != 'cls.seq_relationship.bias')
+        ],
+        'weight_decay':
+        0.0,
+        'no_freeze':
+        False
     }, {
         'params':
-        [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
+        [p for n, p in param_optimizer if n == 'cls.seq_relationship.bias'],
         'weight_decay':
-        0.0
+        0.0,
+        'no_freeze':
+        True
     }]
 
     optimizer_parameter_names_1 = [
@@ -431,8 +448,10 @@ def prepare_model_optimizer(args):
     args.device = model.network.device
     model.set_device(args.device)
     args.fp16 = model.network.fp16_enabled()
-    args.use_lamb = model.network.optimizer_name(
-    ) == deepspeed.runtime.config.LAMB_OPTIMIZER
+    args.use_lamb = (model.network.optimizer_name() ==
+                     deepspeed.runtime.config.LAMB_OPTIMIZER
+                     or model.network.optimizer_name() ==
+                     deepspeed.runtime.config.ONEBIT_LAMB_OPTIMIZER)
 
     # Prepare Summary Writer and saved_models path
     if dist.get_rank() == 0:

@@ -10,7 +10,9 @@
       "weight_decay": 0.01,
       "bias_correction": false,
       "max_coeff": 0.3,
-      "min_coeff": 0.01
+      "min_coeff": 0.01,
+      "freeze_step": 100,
+      "update_window": 100
     }
   },
   "gradient_clipping": 1.0,
