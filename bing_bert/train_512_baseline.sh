@@ -7,8 +7,9 @@ th_dir=/turing-hdd/users/conglli
 
 # Where should we save checkpoints and tensorboard events?
 JOB_NAME=$1
-CHECKPOINT_FILE=$2
-EPOCH=$3
+CONFIG_NAME=$2
+CHECKPOINT_FILE=$3
+EPOCH=$4
 #OUTPUT_DIR=${base_dir}/bert_model_outputs
 #OUTPUT_DIR=${local_dir}/bert_model_outputs
 #OUTPUT_DIR=${nfs_dir}/bert_model_outputs
@@ -30,7 +31,7 @@ NCCL_TREE_THRESHOLD=0 deepspeed ${base_dir}/deepspeed_train.py \
 --deepspeed \
 --deepspeed_transformer_kernel \
 --job_name $JOB_NAME \
---deepspeed_config ${base_dir}/deepspeed_bsz32k_lamb_config_seq512.json \
+--deepspeed_config ${base_dir}/${CONFIG_NAME}.json \
 --data_path_prefix /data/bert \
 --validation_data_path_prefix /data/bert \
 --rewarmup \

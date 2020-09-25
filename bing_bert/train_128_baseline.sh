@@ -7,6 +7,7 @@ th_dir=/turing-hdd/users/conglli
 
 # Where should we save checkpoints and tensorboard events?
 JOB_NAME=$1
+CONFIG_NAME=$2
 #OUTPUT_DIR=${base_dir}/bert_model_outputs
 #OUTPUT_DIR=${local_dir}/bert_model_outputs
 #OUTPUT_DIR=${nfs_dir}/bert_model_outputs
@@ -24,7 +25,7 @@ NCCL_TREE_THRESHOLD=0 deepspeed ${base_dir}/deepspeed_train.py \
 --lr_schedule "EE" \
 --lr_offset 10e-4 \
 --job_name $JOB_NAME \
---deepspeed_config ${base_dir}/deepspeed_bsz64k_lamb_config_seq128.json \
+--deepspeed_config ${base_dir}/${CONFIG_NAME}.json \
 --data_path_prefix /data/bert \
 &> $OUTPUT_DIR/${JOB_NAME}.log
 #--ckpt_to_save 150 \
