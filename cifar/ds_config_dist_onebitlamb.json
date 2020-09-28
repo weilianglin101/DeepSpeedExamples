@@ -1,0 +1,26 @@
+{
+  "train_batch_size": 1024,
+  "train_micro_batch_size_per_gpu": 128,
+  "steps_per_print": 1000,
+  "prescale_gradients": false,
+  "optimizer": {
+    "type": "OneBitLamb",
+    "params": {
+      "lr": 1e-2,
+      "weight_decay": 0.01,
+      "bias_correction": false,
+      "max_coeff": 0.3,
+      "min_coeff": 0.01,
+      "freeze_step": 2000,
+      "update_window": 10
+    }
+  },
+  "gradient_clipping": 1.0,
+
+  "wall_clock_breakdown": false,
+
+  "fp16": {
+    "enabled": false,
+    "loss_scale": 0
+  }
+}
