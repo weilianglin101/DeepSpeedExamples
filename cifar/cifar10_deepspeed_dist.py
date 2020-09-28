@@ -170,12 +170,16 @@ for n, p in list(net.named_parameters()):
         names.append(n)
 print('num parameter: ', len(names), len(parameters))
 print('parameter names: ', names)
+optimizer_grouped_parameters = [{'params': parameters, 'no_freeze': False}]
 # Initialize DeepSpeed to use the following features
 # 1) Distributed model
 # 2) Distributed data loader
 # 3) DeepSpeed optimizer
 model_engine, optimizer, trainloader, __ = deepspeed.initialize(
-    args=args, model=net, model_parameters=parameters, training_data=trainset)
+    args=args,
+    model=net,
+    model_parameters=optimizer_grouped_parameters,
+    training_data=trainset)
 
 #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 #net.to(device)
