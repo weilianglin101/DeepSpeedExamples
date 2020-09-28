@@ -171,6 +171,20 @@ for n, p in list(net.named_parameters()):
 print('num parameter: ', len(names), len(parameters))
 print('parameter names: ', names)
 optimizer_grouped_parameters = [{'params': parameters, 'no_freeze': False}]
+
+# parameters, names = [], []
+# parameters2, names2 = [], []
+# for n, p in list(net.named_parameters()):
+#     if p.requires_grad:
+#         if n[0:6] == 'linear':
+#             parameters2.append(p)
+#             names2.append(n)
+#         else:
+#             parameters.append(p)
+#             names.append(n)
+# optimizer_grouped_parameters = [{'params': parameters, 'no_freeze': False}, {'params': parameters2, 'no_freeze': True}]
+# names = names+names2
+
 # Initialize DeepSpeed to use the following features
 # 1) Distributed model
 # 2) Distributed data loader
