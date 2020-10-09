@@ -381,33 +381,76 @@ def prepare_optimizer_parameters(args, model):
     else:
         weight_decay = 0.01
 
+    # optimizer_grouped_parameters = [{
+    #     'params': [
+    #         p for n, p in param_optimizer if (not any(
+    #             nd in n
+    #             for nd in no_decay) and n[0:3] != 'cls')
+    #     ],
+    #     'weight_decay':
+    #     weight_decay,
+    #     'no_freeze':
+    #     False
+    # }, {
+    #     'params': [
+    #         p for n, p in param_optimizer if (not any(
+    #             nd in n
+    #             for nd in no_decay) and n[0:3] == 'cls')
+    #     ],
+    #     'weight_decay':
+    #     weight_decay,
+    #     'no_freeze':
+    #     True
+    # }, {
+    #     'params': [
+    #         p for n, p in param_optimizer
+    #         if (any(nd in n
+    #                 for nd in no_decay) and n[0:3] != 'cls')
+    #     ],
+    #     'weight_decay':
+    #     0.0,
+    #     'no_freeze':
+    #     False
+    # }, {
+    #     'params': [
+    #         p for n, p in param_optimizer
+    #         if (any(nd in n
+    #                 for nd in no_decay) and n[0:3] == 'cls')
+    #     ],
+    #     'weight_decay':
+    #     0.0,
+    #     'no_freeze':
+    #     True
+    # }]
+
+    # optimizer_parameter_names_1 = [
+    #     n for n, p in param_optimizer if (not any(nd in n for nd in no_decay) and n[0:3] != 'cls')
+    # ]
+    # optimizer_parameter_names_2 = [
+    #     n for n, p in param_optimizer if (not any(nd in n for nd in no_decay) and n[0:3] == 'cls')
+    # ]
+    # optimizer_parameter_names_3 = [
+    #     n for n, p in param_optimizer if (any(nd in n for nd in no_decay) and n[0:3] != 'cls')
+    # ]
+    # optimizer_parameter_names_4 = [
+    #     n for n, p in param_optimizer if (any(nd in n for nd in no_decay) and n[0:3] == 'cls')
+    # ]
+    # optimizer_parameter_names = optimizer_parameter_names_1 + optimizer_parameter_names_2 + optimizer_parameter_names_3 + optimizer_parameter_names_4
+
     optimizer_grouped_parameters = [{
-        'params': [
-            p for n, p in param_optimizer if (not any(
-                nd in n
-                for nd in no_decay) and n != 'cls.seq_relationship.bias')
-        ],
+        'params':
+        [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
         'weight_decay':
         weight_decay,
         'no_freeze':
         False
     }, {
-        'params': [
-            p for n, p in param_optimizer
-            if (any(nd in n
-                    for nd in no_decay) and n != 'cls.seq_relationship.bias')
-        ],
+        'params':
+        [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
         'weight_decay':
         0.0,
         'no_freeze':
         False
-    }, {
-        'params':
-        [p for n, p in param_optimizer if n == 'cls.seq_relationship.bias'],
-        'weight_decay':
-        0.0,
-        'no_freeze':
-        True
     }]
 
     optimizer_parameter_names_1 = [
@@ -451,7 +494,9 @@ def prepare_model_optimizer(args):
     args.use_lamb = (model.network.optimizer_name() ==
                      deepspeed.runtime.config.LAMB_OPTIMIZER
                      or model.network.optimizer_name() ==
-                     deepspeed.runtime.config.ONEBIT_LAMB_OPTIMIZER)
+                     deepspeed.runtime.config.ONEBIT_LAMB_OPTIMIZER
+                     or model.network.optimizer_name() ==
+                     deepspeed.runtime.config.ONEBIT_LAMB_OPTIMIZER_SIMULATE)
 
     # Prepare Summary Writer and saved_models path
     if dist.get_rank() == 0:
